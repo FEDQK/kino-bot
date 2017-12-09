@@ -10,7 +10,11 @@ const bot = new TelegramBot(token, {
 let movieAPI = "https://api.themoviedb.org/3/discover/movie?language=ru&api_key=" + config.keyAPI;
 
 function movieInfoAPI(id) {
-  return "https://api.themoviedb.org/3/discover/movie/"+ id +"?language=ru&api_key=" + config.keyAPI;
+  return "https://api.themoviedb.org/3/movie/"+ id +"?language=ru&api_key=" + config.keyAPI;
+}
+
+function get() {
+
 }
 
 const fetchJSONFile = function(url) {
@@ -47,34 +51,31 @@ bot.onText(/\/start/, (msg) => {
   bot.sendMessage(chatId, "/фильмы\nпопулярные");
 });
 
-bot.onText(/\/популярные/, (msg) => {
+bot.onText(/\/popular/, (msg) => {
   const chatId = msg.chat.id;
   let answer = "";
   fetchJSONFile(movieAPI+"&sort_by=popularity.desc")
     .then((data) => {
       data.results.some((movie, index) => {
         let genres = "";
-        let sApi = movieInfoAPI(movie.id);
-        fetchJSONFile(sApi)
+        fetchJSONFile(movieInfoAPI(movie.id))
           .then((movieInfo) => {
-            console.log(movieInfo);
             genres = movieInfo.genres.reduce((previousValue, currentValue) => {
               return previousValue + ", " + currentValue.name;
-            });
+            }, "").substr(2);
           })
           .catch((err) => console.error(err));
-          console.log(genres);
-        answer +=
-        `
-        ${index + 1}. ${movie.title}
-        Рейтинг: ${movie.vote_average}/10
-        Дата выхода: ${movie.release_date}
-        Жанры: ${genres}
+          answer +=
+         `
+         ${index + 1}. ${movie.title}
+         Рейтинг: ${movie.vote_average}/10
+         Дата выхода: ${movie.release_date}
+         Жанры: ${genres}
 
-        `;
+         `;
+          console.log(answer);
         return (index == 1);
       });
-      console.log(answer);
       bot.sendMessage(chatId, answer);
     })
     .catch((err) => console.error(err));
