@@ -13,8 +13,26 @@ function movieInfoAPI(id) {
   return "https://api.themoviedb.org/3/movie/"+ id +"?language=ru&api_key=" + config.keyAPI;
 }
 
-function get() {
-
+function getMovies(data) {
+  let answer = "";
+  data.results.some((movie, index) => {
+    let genres = "";
+    // console.log(movie);
+    fetchJSONFile(movieInfoAPI(movie.id))
+      .then((movieInfo) => {
+        genres = movieInfo.genres.reduce((previousValue, currentValue) => {
+          return previousValue + ", " + currentValue.name;
+        }, "").substr(2);
+      })
+      .catch((err) => console.error(err));
+      answer +=
+     `<b>${index + 1}.</b> <a href='https://www.themoviedb.org/movie/${movie.id}?language=ru'>${movie.title}</a>
+     <b>Рейтинг:</b> ${movie.vote_average}/10 (${movie.vote_count})
+     <b>Дата выхода:</b> ${movie.release_date}
+     <b>Жанры:</b> ${genres}\n`;
+    return (index == 9);
+  });
+  return answer;
 }
 
 const fetchJSONFile = function(url) {
@@ -53,33 +71,21 @@ bot.onText(/\/start/, (msg) => {
 
 bot.onText(/\/popular/, (msg) => {
   const chatId = msg.chat.id;
-  let answer = "";
   fetchJSONFile(movieAPI+"&sort_by=popularity.desc")
     .then((data) => {
-      data.results.some((movie, index) => {
-        let genres = "";
-        fetchJSONFile(movieInfoAPI(movie.id))
-          .then((movieInfo) => {
-            genres = movieInfo.genres.reduce((previousValue, currentValue) => {
-              return previousValue + ", " + currentValue.name;
-            }, "").substr(2);
-          })
-          .catch((err) => console.error(err));
-          answer +=
-         `
-         ${index + 1}. ${movie.title}
-         Рейтинг: ${movie.vote_average}/10
-         Дата выхода: ${movie.release_date}
-         Жанры: ${genres}
-
-         `;
-          console.log(answer);
-        return (index == 1);
-      });
-      bot.sendMessage(chatId, answer);
+      bot.sendMessage(chatId, getMovies(data), {parse_mode : "HTML"});
     })
     .catch((err) => console.error(err));
+});
 
+bot.onText(/\/best( for (.+))?/, (msg, match) => {
+  const chatId = msg.chat.id;
+  let year = match[2] ? "&primary_release_year=" + match[2] : "";
+  fetchJSONFile(movieAPI+"&sort_by=vote_average.desc&vote_count.gte=1000"+year)
+    .then((data) => {
+      bot.sendMessage(chatId, getMovies(data), {parse_mode : "HTML"});
+    })
+    .catch((err) => console.error(err));
 });
 
 bot.onText(/\/sendpic/, (msg) => {
