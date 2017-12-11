@@ -66,7 +66,7 @@ const fetchJSONFile = function(url) {
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "/фильмы\nпопулярные");
+  bot.sendMessage(chatId, "/popular\n/best for 2017");
 });
 
 bot.onText(/\/popular/, (msg) => {
@@ -80,10 +80,40 @@ bot.onText(/\/popular/, (msg) => {
 
 bot.onText(/\/best( for (.+))?/, (msg, match) => {
   const chatId = msg.chat.id;
+  let answer = "";
   let year = match[2] ? "&primary_release_year=" + match[2] : "";
   fetchJSONFile(movieAPI+"&sort_by=vote_average.desc&vote_count.gte=1000"+year)
     .then((data) => {
-      bot.sendMessage(chatId, getMovies(data), {parse_mode : "HTML"});
+      return data.results.map((movie) => {
+        return movie.id;
+      });
+      // bot.sendMessage(chatId, getMovies(data), {parse_mode : "HTML"});
+    })
+    .then((moviesId) => {
+      moviesId.some((movieId, index) => {
+      console.log(movieInfoAPI(movieId));
+      fetchJSONFile(movieInfoAPI(movieId))
+        .then((movie) => {
+          let genres = movie.genres.reduce((previousValue, currentValue) => {
+            return previousValue + ", " + currentValue.name;
+          }, "").substr(2);
+          return
+         `<b>${index + 1}.</b> <a href='https://www.themoviedb.org/movie/${movie.id}?language=ru'>${movie.title}</a>
+         <b>Рейтинг:</b> ${movie.vote_average}/10 (${movie.vote_count})
+         <b>Дата выхода:</b> ${movie.release_date}
+         <b>Жанры:</b> ${genres}\n`;
+        })
+        .then((answerMovie) => {
+          // console.log(answerMovie);
+          answer += answerMovie;
+        })
+        .catch((err) => console.error(err));
+        return (index == 2);
+      });
+      return answer;
+    })
+    .then((answer) => {
+      bot.sendMessage(chatId, answer, {parse_mode : "HTML"});
     })
     .catch((err) => console.error(err));
 });
