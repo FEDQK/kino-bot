@@ -7,7 +7,10 @@ const bot = new TelegramBot(token, {
   polling: true
 });
 
-let movieAPI = "https://api.themoviedb.org/3/discover/movie?language=ru&api_key=" + config.keyAPI;
+const movieAPI = "https://api.themoviedb.org/3/discover/movie?language=ru&api_key=" + config.keyAPI;
+const upcomingAPI = "https://api.themoviedb.org/3/movie/upcoming?language=ru&api_key=" + config.keyAPI;
+const nowPlayingAPI = "https://api.themoviedb.org/3/movie/now_playing?language=ru&api_key=" + config.keyAPI;
+
 
 function movieInfoAPI(id) {
   return "https://api.themoviedb.org/3/movie/"+ id +"?language=ru&api_key=" + config.keyAPI;
@@ -66,7 +69,13 @@ const fetchJSONFile = function(url) {
 
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "/фильмы\nпопулярные");
+  bot.sendMessage(chatId,
+    `
+    /popular - популярные фильмы
+    /best for 2017 - лучшие фильмы
+    /upcoming - скоро в кино
+    /now_playing - сейчас в кино`
+  );
 });
 
 bot.onText(/\/popular/, (msg) => {
@@ -82,6 +91,23 @@ bot.onText(/\/best( for (.+))?/, (msg, match) => {
   const chatId = msg.chat.id;
   let year = match[2] ? "&primary_release_year=" + match[2] : "";
   fetchJSONFile(movieAPI+"&sort_by=vote_average.desc&vote_count.gte=1000"+year)
+    .then((data) => {
+      bot.sendMessage(chatId, getMovies(data), {parse_mode : "HTML"});
+    })
+    .catch((err) => console.error(err));
+});
+
+bot.onText(/\/upcoming/, (msg) => {
+  const chatId = msg.chat.id;
+  fetchJSONFile(upcomingAPI)
+    .then((data) => {
+      bot.sendMessage(chatId, getMovies(data), {parse_mode : "HTML"});
+    })
+    .catch((err) => console.error(err));
+});
+bot.onText(/\/now_playing/, (msg) => {
+  const chatId = msg.chat.id;
+  fetchJSONFile(nowPlayingAPI)
     .then((data) => {
       bot.sendMessage(chatId, getMovies(data), {parse_mode : "HTML"});
     })
