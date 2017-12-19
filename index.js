@@ -22,7 +22,6 @@ function getMovies(data) {
   let answer = "";
   data.results.some((movie, index) => {
     let genres = getNameGenres(movie.genre_ids);
-    // console.log(movie);
     fetchJSONFile(movieInfoAPI(movie.id))
       .then((movieInfo) => {
         genres = movieInfo.genres.reduce((previousValue, currentValue) => {
@@ -76,8 +75,7 @@ bot.onText(/\/start/, (msg) => {
 
 bot.onText(/\/popular( (for|genre) (.\S+))?( (for|genre) (.\S+))?/, (msg, match) => {
   const chatId = msg.chat.id;
-  let year = match[2] ? "&primary_release_year=" + match[2] : "";
-  fetchJSONFile(movieAPI+"&sort_by=popularity.desc"+year)
+  fetchJSONFile(movieAPI+"&sort_by=popularity.desc"+parseYearGenre(match))
     .then((data) => {
       bot.sendMessage(chatId, getMovies(data), {parse_mode : "HTML"});
     })
