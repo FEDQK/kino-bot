@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/FEDQK/kino-bot#readme",
   "dependencies": {
-    "node-telegram-bot-api": "^0.29.0"
+    "node-telegram-bot-api": "^0.52.0"
   }
 }
